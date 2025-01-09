@@ -1,0 +1,9 @@
+pandas
+matplotlib
+networkx
+seaborn
+numpy
+scikit-learn
+imblearn
+graphviz
+IPython

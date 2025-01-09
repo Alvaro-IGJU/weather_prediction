@@ -33,10 +33,12 @@ for i in range(num_days):
     solar_radiation = st.number_input(f"Radiación solar (W/m²):", key=f"solar_radiation_{i}", value=500.0, min_value=0.0, max_value=2000.0)
     visibility = st.number_input(f"Visibilidad (km):", key=f"visibility_{i}", value=10.0, min_value=0.0, max_value=50.0)
     cloudiness_id = st.selectbox(f"Índice de nubosidad (0-10):", options=list(range(0, 11)), key=f"cloudiness_id_{i}", index=5)
-    estacion_id = st.selectbox(f"Estación (ID):", options=[1, 2, 3, 4], key=f"estacion_id_{i}")  # Reemplazar con IDs válidos
+    estacion_id = st.selectbox(f"Estación (ID):", options=[1, 2, 3, 4], key=f"estacion_id_{i}")
     days.append([precipitation, temp_max, temp_min, wind, humidity, pressure, solar_radiation, visibility, cloudiness_id, estacion_id])
 
-# Predicción al presionar el botón
+# Lista de tipos de clima
+weather_types = ['Niebla', 'Lluvia', 'Tormenta', 'Soleado']  # Ajusta según las etiquetas de tu modelo
+
 if st.button("Predecir"):
     if days:
         # Crear DataFrame de entrada
@@ -46,28 +48,52 @@ if st.button("Predecir"):
         ])
         st.write("### Datos de entrada antes del PCA:")
         st.dataframe(input_data)
-       
+
+        # Verificar si las entradas son válidas
+        if input_data.isnull().values.any():
+            st.error("Hay valores nulos en los datos de entrada. Por favor, verifica tus entradas.")
+            st.stop()
+
+        # Convertir las columnas categóricas en dummies
+        input_data['cloudiness'] = input_data['cloudiness_id'].map({
+            0: 'despejado', 1: 'parcialmente nublado', 2: 'nublado'  # Ajusta según tus datos
+        })
+        input_data['estacion'] = input_data['estacion_id'].map({
+            1: 'Primavera', 2: 'Verano', 3: 'Otoño', 4: 'Invierno'  # Ajusta según tus datos
+        })
+
+        # Generar dummies para que coincidan con el entrenamiento
+        input_data = pd.get_dummies(input_data, columns=['cloudiness', 'estacion'], prefix=['cloudiness', 'estacion'])
+
+        # Cargar las columnas usadas en el entrenamiento
+        fitted_columns = joblib.load('fitted_columns.pkl')
+
+        # Agregar columnas faltantes con valores 0
+        for col in fitted_columns:
+            if col not in input_data.columns:
+                input_data[col] = 0
+
+        # Ordenar las columnas para que coincidan
+        input_data = input_data[fitted_columns]
+
         # Aplicar PCA si está disponible
         if pca is not None:
             try:
-                # Convertir a array NumPy antes de aplicar el PCA
-                input_data_array = input_data.values  # Convertir DataFrame a array
-                input_data_pca = pca.transform(input_data_array)  # Transformar los datos usando PCA
+                # Normalizar los datos
+                scaler = joblib.load('scaler.pkl')  # Asegúrate de tener un escalador guardado
+                input_data_scaled = scaler.transform(input_data)
+
+                # Transformar datos con PCA
+                input_data_pca = pca.transform(input_data_scaled)  # Transformar los datos usando PCA
                 st.write("### Datos transformados por el PCA:")
                 st.dataframe(input_data_pca)
                 
                 # Predicción del modelo
                 predictions = model.predict(input_data_pca)
-                st.write("### Predicciones del modelo (sin procesar):")
-                st.write(predictions)
-                
-                # Verificar la forma de las predicciones y construir el DataFrame de salida
-                if len(predictions.shape) == 1:
-                    prediction_df = pd.DataFrame(predictions, columns=['Predicción'])
-                else:
-                    num_columns = predictions.shape[1]
-                    column_names = [f"Clase_{i+1}" for i in range(num_columns)]
-                    prediction_df = pd.DataFrame(predictions, columns=column_names)
+
+                # Mapear las predicciones a tipos de clima
+                prediction_df = pd.DataFrame(predictions, columns=weather_types)
+                prediction_df = prediction_df.applymap(lambda x: 'Sí' if x == 1 else 'No')
                 
                 # Mostrar resultados
                 st.write("### Resultados de las Predicciones:")
