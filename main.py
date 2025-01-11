@@ -59,31 +59,15 @@ for i in range(num_days):
     with col1:
         precipitation = st.number_input(f"Precipitación (mm):", key=f"precipitation_{i}", value=0.0, min_value=0.0, max_value=500.0)
         temp_max = st.number_input(f"Temperatura máxima (°C):", key=f"temp_max_{i}", value=30.0, min_value=-50.0, max_value=60.0)
-        temp_min = st.number_input(f"Temperatura mínima (°C):", key=f"temp_min_{i}", value=20.0, min_value=-50.0, max_value=60.0)
         wind = st.number_input(f"Velocidad del viento (km/h):", key=f"wind_{i}", value=10.0, min_value=0.0, max_value=200.0)
-        cloudiness_name = st.selectbox(f"Índice de nubosidad:", options=list(cloudiness_map.keys()), key=f"cloudiness_name_{i}")
-        cloudiness_id = cloudiness_map[cloudiness_name]
     with col2:
         humidity = st.number_input(f"Humedad relativa (%):", key=f"humidity_{i}", value=50.0, min_value=0.0, max_value=100.0)
-        pressure = st.number_input(f"Presión atmosférica (hPa):", key=f"pressure_{i}", value=1013.0, min_value=800.0, max_value=1200.0)
-        solar_radiation = st.number_input(f"Radiación solar (W/m²):", key=f"solar_radiation_{i}", value=500.0, min_value=0.0, max_value=2000.0)
-        visibility = st.number_input(f"Visibilidad (km):", key=f"visibility_{i}", value=10.0, min_value=0.0, max_value=50.0)
-        estacion_name = st.selectbox(f"Estación:", options=list(estacion_map.keys()), key=f"estacion_name_{i}")
-        estacion_id = estacion_map[estacion_name]
-    days.append([precipitation, temp_max, temp_min, wind, humidity, pressure, solar_radiation, visibility, cloudiness_id, estacion_id])
+    days.append([precipitation, temp_max, wind, humidity])
 
 if st.button("Predecir"):
     if days:
         # Crear DataFrame de entrada
-        input_data = pd.DataFrame(days, columns=[
-            'precipitation', 'temp_max', 'temp_min', 'wind', 'humidity', 'pressure', 
-            'solar_radiation', 'visibility', 'cloudiness_id', 'estacion_id'
-        ])
-
-        # Generar dummies para columnas categóricas
-        input_data['cloudiness'] = input_data['cloudiness_id'].map({1: 'Parcialmente nublado', 2: 'Despejado', 3: 'Cubierto'})
-        input_data['estacion'] = input_data['estacion_id'].map({1: 'Invierno', 2: 'Primavera', 3: 'Verano', 4: 'Otoño'})
-        input_data = pd.get_dummies(input_data, columns=['cloudiness', 'estacion'], prefix=['cloudiness', 'estacion'])
+        input_data = pd.DataFrame(days, columns=['precipitation', 'temp_max', 'wind', 'humidity'])
 
         # Asegurarse de que las columnas coincidan con las usadas en el entrenamiento
         for col in fitted_columns:
@@ -99,13 +83,18 @@ if st.button("Predecir"):
         else:
             predictions = model.predict(input_data_scaled)
 
-        # Mostrar los resultados en formato horizontal
+        # Manejar predicciones vacías
         st.write("### Predicciones para los próximos días:")
-        cols = st.columns(num_days)  # Crear columnas para los días
-        start_date = datetime.now() + timedelta(days=1)  # Comenzar desde mañana
+        cols = st.columns(num_days)
+        start_date = datetime.now() + timedelta(days=1)
         for day, col in enumerate(cols):
-            weather_prediction = [weather_types[i] for i, val in enumerate(predictions[day]) if val == 1]
-            weather_icons_list = "".join([weather_icons[wp] for wp in weather_prediction])
+            prediction_probs = predictions[day]
+            weather_prediction = [
+                weather_types[i] for i, val in enumerate(prediction_probs) if val == 1
+            ]
+            if not weather_prediction:
+                weather_prediction = ["Nublado"]  # Puedes usar "Nublado" como predicción por defecto
+            weather_icons_list = "".join([weather_icons.get(wp, "❓") for wp in weather_prediction])
             day_label = (start_date + timedelta(days=day)).strftime('%A').capitalize()
             with col:
                 card_html = f"""

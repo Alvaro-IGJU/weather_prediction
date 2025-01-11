@@ -1,4 +1,4 @@
-#!/home/alvaro/Escritorio/Prediccion_Tiempo/venv/bin/python3
+#!/home/alvaro/Escritorio/Prediccion_Tiempo/venv/bin/python
 # -*- coding: utf-8 -*-
 import re
 import sys
