@@ -5,25 +5,26 @@ from datetime import datetime, timedelta
 import locale
 
 # Establecer la configuración regional para español
-locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')  # Para sistemas Unix
-# Para Windows, usa 'Spanish_Spain.1252'
-# locale.setlocale(locale.LC_TIME, 'Spanish_Spain.1252')
+try:
+    locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')  # Para sistemas Unix
+except locale.Error:
+    st.warning("No se pudo configurar la localización para 'es_ES.UTF-8'. Asegúrate de que tu sistema soporte esta configuración.")
 
 # Cargar el modelo entrenado
-model = joblib.load('weather_model.pkl')
+model = joblib.load('pkl_models/weather_model.pkl')
 
 # Cargar PCA y otras transformaciones si es necesario
 try:
-    pca = joblib.load('pca_model.pkl')
+    pca = joblib.load('pkl_models/pca_model.pkl')
 except FileNotFoundError:
     st.error("El modelo PCA no se encontró. Asegúrate de haberlo guardado y proporcionar la ruta correcta.")
     pca = None
 
 # Cargar las columnas ajustadas durante el entrenamiento
-fitted_columns = joblib.load('fitted_columns.pkl')
+fitted_columns = joblib.load('pkl_models/fitted_columns.pkl')
 
 # Cargar escalador para normalizar los datos
-scaler = joblib.load('scaler.pkl')
+scaler = joblib.load('pkl_models/scaler.pkl')
 
 # Título de la aplicación
 st.title("Predicción Meteorológica para los Próximos Días")
@@ -43,8 +44,12 @@ weather_icons = {
     'Niebla': "🌫️",
     'Lluvia': "🌧️",
     'Tormenta': "⛈️",
-    'Soleado': "☀️"
+    'Soleado': "☀️",
+    'Nublado': "☁️"
 }
+
+# Lista de tipos de clima
+weather_types = ['Niebla', 'Lluvia', 'Tormenta', 'Soleado', 'Nublado']
 
 # Recoger entradas para cada día
 days = []
@@ -66,9 +71,6 @@ for i in range(num_days):
         estacion_name = st.selectbox(f"Estación:", options=list(estacion_map.keys()), key=f"estacion_name_{i}")
         estacion_id = estacion_map[estacion_name]
     days.append([precipitation, temp_max, temp_min, wind, humidity, pressure, solar_radiation, visibility, cloudiness_id, estacion_id])
-
-# Lista de tipos de clima
-weather_types = ['Niebla', 'Lluvia', 'Tormenta', 'Soleado']
 
 if st.button("Predecir"):
     if days:
@@ -102,26 +104,22 @@ if st.button("Predecir"):
         cols = st.columns(num_days)  # Crear columnas para los días
         start_date = datetime.now() + timedelta(days=1)  # Comenzar desde mañana
         for day, col in enumerate(cols):
-            weather_type = weather_types[predictions[day].argmax()]
-            temp_max = int(input_data.iloc[day]['temp_max'])
-            temp_min = int(input_data.iloc[day]['temp_min'])
-            day_label = (start_date + timedelta(days=day)).strftime('%A').capitalize()  # Nombre del día en español
+            weather_prediction = [weather_types[i] for i, val in enumerate(predictions[day]) if val == 1]
+            weather_icons_list = "".join([weather_icons[wp] for wp in weather_prediction])
+            day_label = (start_date + timedelta(days=day)).strftime('%A').capitalize()
             with col:
                 card_html = f"""
                     <div style="background-color: #f5f5f5; padding: 20px; border-radius: 10px; 
                                 box-shadow: 0px 4px 6px rgba(0,0,0,0.1); text-align: center; 
                                 width: 150px; height: 250px; margin: 0 auto;">
                         <div style="font-size: 50px; margin-bottom: 10px;">
-                            {weather_icons[weather_type]}
+                            {weather_icons_list}
                         </div>
                         <div style="font-size: 14px; font-weight: bold; margin-bottom: 10px;">
                             {day_label}
                         </div>
                         <div style="font-size: 12px; color: #555; margin-bottom: 10px;">
-                            {weather_type}
-                        </div>
-                        <div style="font-size: 16px; font-weight: bold; color: #333;">
-                            {temp_max}° <span style="color: #888;">{temp_min}°</span>
+                            {", ".join(weather_prediction)}
                         </div>
                     </div>
                 """
