@@ -104,7 +104,7 @@ if st.button("Predecir"):
                         <div style="font-size: 50px; margin-bottom: 10px;">
                             {weather_icons_list}
                         </div>
-                        <div style="font-size: 14px; font-weight: bold; margin-bottom: 10px;">
+                        <div style="font-size: 14px; font-weight: bold; margin-bottom: 10px; color: black;">
                             {day_label}
                         </div>
                         <div style="font-size: 12px; color: #555; margin-bottom: 10px;">
