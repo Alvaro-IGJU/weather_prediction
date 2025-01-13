@@ -6,9 +6,9 @@ import locale
 
 # Establecer la configuración regional para español
 try:
-    locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')  # Para sistemas Unix
+    locale.setlocale(locale.LC_TIME, 'en_US.UTF-8')  # Para sistemas Unix
 except locale.Error:
-    st.warning("No se pudo configurar la localización para 'es_ES.UTF-8'. Asegúrate de que tu sistema soporte esta configuración.")
+    st.warning("No se pudo configurar la localización para 'en_US.UTF-8'. Asegúrate de que tu sistema soporte esta configuración.")
 
 # Cargar el modelo entrenado
 model = joblib.load('pkl_models/weather_model.pkl')
