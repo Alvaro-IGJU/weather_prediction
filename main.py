@@ -27,7 +27,7 @@ fitted_columns = joblib.load('pkl_models/fitted_columns.pkl')
 scaler = joblib.load('pkl_models/scaler.pkl')
 
 # Título de la aplicación
-st.title("Predicción Meteorológica para los Próximos Días")
+st.title("MeteoVision")
 st.markdown("Ingresa las características climáticas para predecir el clima de los próximos días. 😊")
 
 # Número de días a predecir
@@ -93,7 +93,7 @@ if st.button("Predecir"):
                 weather_types[i] for i, val in enumerate(prediction_probs) if val == 1
             ]
             if not weather_prediction:
-                weather_prediction = ["Nublado"]  # Puedes usar "Nublado" como predicción por defecto
+                weather_prediction = ["Nublado"] 
             weather_icons_list = "".join([weather_icons.get(wp, "❓") for wp in weather_prediction])
             day_label = (start_date + timedelta(days=day)).strftime('%A').capitalize()
             with col:
