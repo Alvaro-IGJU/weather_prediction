@@ -8,9 +8,9 @@ import calendar
 
 # Intentar configurar la localización para español
 try:
-    locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')  # Para sistemas Unix
+    locale.setlocale(locale.LC_TIME, 'us_US.UTF-8')  # Para sistemas Unix
 except locale.Error:
-    st.warning("No se pudo configurar la localización para 'es_ES.UTF-8'. Asegúrate de que tu sistema soporte esta configuración.")
+    st.warning("No se pudo configurar la localización para 'us_US.UTF-8'. Asegúrate de que tu sistema soporte esta configuración.")
 
 # Configurar los días de la semana en español
 dias_semana = {
